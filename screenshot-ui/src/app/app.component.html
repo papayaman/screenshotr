@@ -1,0 +1,330 @@
+<!-- app.component.html -->
+<div style="display: flex; max-width: 1200px; margin: 0 auto; gap: 30px; font-family: sans-serif; align-items: flex-start; padding: 0 20px 40px 20px;">
+
+  <aside style="margin-top: 40px; width: 280px; background: var(--bg-panel); padding: 20px; border-radius: 8px; border: 1px solid var(--border-main); position: sticky; top: 40px; flex-shrink: 0; transition: all 0.3s; display: flex; flex-direction: column; gap: 30px; max-height: calc(100vh - 80px); overflow-y: auto;">
+    
+    <div>
+      <h2 style="margin-top: 0; font-size: 16px; color: var(--text-main); border-bottom: 2px solid var(--border-main); padding-bottom: 10px;">⚙️ Global Settings</h2>
+      
+      <div style="margin-top: 20px; margin-bottom: 20px;">
+        <label style="display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: var(--text-main);">Base URL</label>
+        <input type="text" [(ngModel)]="config.baseUrl" placeholder="https://" style="width: 100%; padding: 10px; border: 1px solid var(--border-input); background: var(--bg-input); border-radius: 4px; box-sizing: border-box; font-size: 14px;"/>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <div style="flex: 1;">
+          <label style="display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; color: var(--text-main);">Desktop Width</label>
+          <input type="number" [(ngModel)]="config.desktopWidth" style="width: 100%; padding: 8px; border: 1px solid var(--border-input); background: var(--bg-input); border-radius: 4px; box-sizing: border-box;"/>
+        </div>
+        <div style="flex: 1;">
+          <label style="display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; color: var(--text-main);">Mobile Width</label>
+          <input type="number" [(ngModel)]="config.mobileWidth" style="width: 100%; padding: 8px; border: 1px solid var(--border-input); background: var(--bg-input); border-radius: 4px; box-sizing: border-box;"/>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px; border-top: 1px solid var(--border-main); padding-top: 15px;">
+        <label style="display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: var(--text-main);">Global Wait Delay (ms)</label>
+        <input type="number" [(ngModel)]="config.globalWaitDelay" style="width: 100%; padding: 10px; border: 1px solid var(--border-input); background: var(--bg-input); border-radius: 4px; box-sizing: border-box; font-size: 14px;"/>
+      </div>
+
+      <div style="border-top: 1px solid var(--border-main); padding-top: 15px;">
+        <label style="display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: var(--text-main);">Global CSS Injection</label>
+        
+        <textarea [(ngModel)]="config.globalCss" 
+                  placeholder=".cookie-banner { display: none !important; }"
+                  rows="3"
+                  style="width: 100%; padding: 10px; border: 1px solid var(--border-input); border-radius: 4px; box-sizing: border-box; font-family: monospace; font-size: 13px; resize: vertical; background: var(--bg-input); color: var(--text-main); outline: none;"></textarea>
+      </div>
+    </div>
+
+    <div style="border-top: 2px solid var(--border-main); padding-top: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-main); padding-bottom: 10px; margin-bottom: 15px;">
+        <h2 style="margin: 0; font-size: 16px; color: var(--text-main);">📂 Recent</h2>
+      </div>
+
+      <div style="margin-bottom: 15px;">
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+          @for (file of recentLocalFiles; track file) {
+            <div style="display: flex; gap: 5px; align-items: center; width: 100%; position: relative;">
+              
+              <button (click)="loadRecentFile(file)" 
+                      [title]="file.replace('.json', '')" 
+                      [style.opacity]="fileToDelete === file ? '0.3' : '1'"
+                      style="flex: 1; text-align: left; background: var(--bg-card); border: 1px solid var(--border-input); padding: 8px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; color: var(--text-main); transition: all 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" 
+                      onmouseover="this.style.background='var(--bg-highlight)'; this.style.borderColor='var(--text-accent)'" 
+                      onmouseout="this.style.background='var(--bg-card)'; this.style.borderColor='var(--border-input)'">
+                {{ file.replace('.json', '') }}
+              </button>
+
+              @if (fileToDelete === file) {
+                <div style="position: absolute; right: 0; display: flex; align-items: center; gap: 4px; background: var(--bg-panel); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-main); box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10;">
+                  <span style="font-size: 11px; font-weight: bold; color: var(--text-muted); margin-right: 4px;">Delete?</span>
+                  
+                  <button (click)="confirmDelete($event)" title="Confirm" style="background: transparent; border: none; cursor: pointer; font-size: 16px; color: #4caf50; padding: 0 4px;">
+                    ✔
+                  </button>
+                  
+                  <button (click)="cancelDelete($event)" title="Cancel" style="background: transparent; border: none; cursor: pointer; font-size: 16px; color: #ff4444; padding: 0 4px;">
+                    ✖
+                  </button>
+                </div>
+              } @else {
+                <button (click)="promptDelete($event, file)" 
+                        title="Delete File"
+                        style="background: transparent; border: 1px solid transparent; color: var(--text-muted); padding: 4px 8px; cursor: pointer; border-radius: 4px; transition: all 0.2s;"
+                        onmouseover="this.style.color='#ff4444'; this.style.background='rgba(255, 68, 68, 0.1)'" 
+                        onmouseout="this.style.color='var(--text-muted)'; this.style.background='transparent'">
+                  ×
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <main style="flex: 1; min-width: 0; max-width: 100%; position: relative;">
+    
+    <div style="position: sticky; top: 0; background: var(--bg-body); z-index: 1000; padding: 40px 0 20px 0; border-bottom: 2px solid var(--border-main); margin-bottom: 20px; transition: background-color 0.3s;">
+      
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px;">
+        <h1 style="margin: 0; color: var(--text-main);">📸 Screenshot Automation UI</h1>
+        <button (click)="toggleTheme()" 
+                style="background: var(--bg-panel); border: 1px solid var(--border-main); border-radius: 20px; padding: 6px 16px; cursor: pointer; color: var(--text-main); font-weight: bold; transition: all 0.2s;">
+          {{ isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode' }}
+        </button>
+      </div>
+
+      <section style="background: var(--bg-highlight); padding: 15px 20px; border-radius: 8px; border: 1px dashed var(--text-accent); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; transition: all 0.3s;">
+        
+        <div style="display: flex; gap: 10px; align-items: center; flex: 1;">
+          <span style="font-size: 14px; font-weight: bold; color: var(--text-accent); white-space: nowrap;">File:</span>
+          
+          <input type="text" [(ngModel)]="currentFilename" placeholder="my-project-name" 
+                 style="padding: 10px; border: 1px solid var(--border-input); background: var(--bg-input); border-radius: 4px; flex: 1; width: 100%; font-weight: bold; outline: none;"/>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <button (click)="saveConfigLocally()" [disabled]="isSavingLocal" 
+                  style="background: var(--bg-card); border: 1px solid #4caf50; color: #4caf50; padding: 10px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: opacity 0.2s; white-space: nowrap;">
+            {{ isSavingLocal ? '💾 Saving' : '💾 Save ' }}
+          </button>
+
+          <div style="display: flex;">
+            <input type="file" id="configImport" accept=".json" (change)="importConfig($event)" style="display: none;"/>
+            
+            <label for="configImport" 
+                   style="background: var(--bg-card); border: 1px solid var(--text-accent); color: var(--text-accent); padding: 9px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; display: inline-flex; align-items: center; gap: 5px; transition: background 0.2s; margin: 0; white-space: nowrap;">
+              📂 Import File
+            </label>
+          </div>
+        </div>
+      </section>
+
+      @if (isExecuting) {
+        <div style="margin-bottom: 15px; padding: 15px; background: var(--bg-panel); border: 1px solid var(--border-main); border-radius: 8px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <strong style="font-size: 16px; color: var(--text-main);">Progress: {{ completedTasks }} / {{ config.tasks.length }}</strong>
+            <span style="color: var(--text-muted); font-style: italic;">{{ executionStatus }}</span>
+          </div>
+          
+          <div style="width: 100%; background: var(--border-main); height: 16px; border-radius: 8px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);">
+            <div [style.width.%]="(completedTasks / config.tasks.length) * 100" style="height: 100%; background: #4caf50; transition: width 0.3s ease;"></div>
+          </div>
+
+          <div style="margin-top: 15px; display: flex; gap: 10px;">
+            <button (click)="togglePause()" style="padding: 8px 16px; font-weight: bold; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer;">
+              {{ isPaused ? '▶️ Resume' : '⏸️ Pause' }}
+            </button>
+            <button (click)="cancelExecution()" style="padding: 8px 16px; font-weight: bold; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">
+              🛑 Cancel 
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (downloadUrl && !isExecuting) {
+        <div style="margin-bottom: 15px; padding: 15px; background: var(--bg-highlight); border: 1px solid var(--text-accent); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+          <strong style="color: var(--text-main); font-size: 14px;">🎉 Automation Complete!</strong>
+          
+          <a [href]="downloadUrl" 
+             target="_blank" 
+             rel="noopener noreferrer"
+             style="background: #4caf50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: background 0.2s;"
+             onmouseover="this.style.background='#43a047'" 
+             onmouseout="this.style.background='#4caf50'">
+            📥 Download .zip
+          </a>
+        </div>
+      }
+
+      @if (statusMessage && !isExecuting) {
+        <div style="margin-bottom: 15px; padding: 12px 15px; background: #e8f5e9; border-radius: 4px; border-left: 4px solid #4caf50; font-size: 14px; color: #1b5e20; font-weight: bold;">
+          {{ statusMessage }}
+        </div>
+      }
+
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; gap: 15px; align-items: center;">
+          <button (click)="submitJob()" [disabled]="isExecuting" style="background: #007bff; color: white; border: none; padding: 12px 24px; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            {{ isExecuting ? '⏳ Browser is running...' : '🚀 Start Automation' }}
+          </button>
+          
+          <button (click)="addTask()" style="padding: 12px 20px; background: var(--bg-panel); color: var(--text-main); border: 1px solid var(--border-main); border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px;">
+            + Add URL
+          </button>
+        </div>
+        <span style="font-weight: bold; color: var(--text-muted);">{{ config.tasks.length }} Tasks</span>
+      </div>
+    </div> <section>
+      @for (task of config.tasks; track $index) {
+        <div draggable="true"
+             (dragstart)="onDragStart($index)"
+             (dragover)="onDragOver($event)"
+             (drop)="onDrop($index)"
+             [style.opacity]="draggedIndex === $index ? '0.4' : '1'"
+             style="border: 1px solid var(--border-main); margin-bottom: 10px; border-radius: 8px; background: var(--bg-card); transition: opacity 0.2s, box-shadow 0.2s; overflow: hidden;">
+          
+          <div style="display: flex; gap: 10px; align-items: center; padding: 8px 15px; background: var(--bg-card);">
+            
+            <div style="cursor: grab; color: var(--text-muted); font-size: 20px; padding-right: 5px; user-select: none;">⋮⋮</div>
+
+            <div style="display: flex; flex: 1.2; min-width: 200px; height: 34px; border: 1px solid var(--border-input); border-radius: 4px; overflow: hidden; align-items: center; background: var(--bg-input);">
+              
+              <span style="background: var(--bg-panel); color: var(--text-muted); padding: 0 12px; height: 100%; border-right: 1px solid var(--border-input); font-size: 13px; font-weight: bold; min-width: 20px; display: flex; align-items: center; justify-content: center;">
+                {{ $index + 1 }}
+              </span>
+              
+              <button (click)="previewTask(task, $index)" 
+                      [disabled]="previewingIndex !== null || recordingIndex !== null"
+                      title="Preview Journey"
+                      style="background: transparent; border: none; height: 100%; border-right: 1px solid var(--border-input); padding: 0 10px; cursor: pointer; font-size: 14px; transition: background 0.2s; display: flex; align-items: center; justify-content: center;"
+                      onmouseover="this.style.background='var(--bg-highlight)'" 
+                      onmouseout="this.style.background='transparent'">
+                {{ previewingIndex === $index ? '⏳' : '👁️' }}
+              </button>
+
+              <input [(ngModel)]="task.name" placeholder="File Name" style="padding: 0 10px; height: 100%; border: none; width: 100%; outline: none; background: transparent; font-size: 13px;"/>
+            </div>
+            
+            <div style="display: flex; flex: 1.5; min-width: 200px; height: 34px; border: 1px solid var(--border-input); border-radius: 4px; overflow: hidden; align-items: center; background: var(--bg-input);">
+              @if (config.baseUrl && !task.url.startsWith('http')) {
+                <span title="{{ config.baseUrl }}" style="background: var(--bg-highlight); color: var(--text-accent); padding: 0 12px; height: 100%; border-right: 1px solid var(--border-input); font-size: 12px; font-weight: bold; white-space: nowrap; user-select: none; display: flex; align-items: center;">
+                  Base URL /
+                </span>
+              }
+              <input [(ngModel)]="task.url" placeholder="path/to/page" style="padding: 0 10px; height: 100%; border: none; width: 100%; outline: none; background: transparent; font-size: 13px;"/>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 8px; margin-left: auto; height: 34px;">
+              
+              <div style="display: flex; align-items: center; height: 100%; background: var(--bg-panel); border: 1px solid var(--border-input); border-radius: 6px; padding: 2px;">
+                <button (click)="task.width = config.desktopWidth"
+                        title="Desktop ({{ config.desktopWidth }}px)"
+                        [style.background]="task.width === config.desktopWidth ? 'var(--bg-highlight)' : 'transparent'"
+                        [style.borderColor]="task.width === config.desktopWidth ? 'var(--text-accent)' : 'transparent'"
+                        style="border: 1px solid transparent; border-radius: 4px; padding: 0 6px; height: 100%; cursor: pointer; font-size: 14px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+                  🖥️
+                </button>
+                <button (click)="task.width = config.mobileWidth"
+                        title="Mobile ({{ config.mobileWidth }}px)"
+                        [style.background]="task.width === config.mobileWidth ? 'var(--bg-highlight)' : 'transparent'"
+                        [style.borderColor]="task.width === config.mobileWidth ? 'var(--text-accent)' : 'transparent'"
+                        style="border: 1px solid transparent; border-radius: 4px; padding: 0 6px; height: 100%; cursor: pointer; font-size: 14px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+                  📱
+                </button>
+              </div>
+
+              <button class="options-btn"
+                      (click)="toggleExpand(task)" 
+                      [style.background]="expandedTasks.has(task) ? 'var(--bg-highlight)' : 'transparent'"
+                      [style.color]="expandedTasks.has(task) ? 'var(--text-accent)' : 'var(--text-main)'"
+                      [style.borderColor]="expandedTasks.has(task) ? 'var(--text-accent)' : 'var(--border-input)'"
+                      style="border: 1px solid; border-radius: 4px; padding: 0 12px; height: 100%; cursor: pointer; font-size: 13px; font-weight: bold; transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; justify-content: center;">
+                Options
+              </button>
+
+              <button (click)="duplicateTask($index)" 
+                      title="Duplicate Task"
+                      style="background: transparent; border: 1px solid var(--border-input); border-radius: 4px; padding: 0 10px; height: 100%; cursor: pointer; font-size: 14px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;"
+                      onmouseover="this.style.background='var(--bg-highlight)'; this.style.borderColor='var(--text-accent)'"
+                      onmouseout="this.style.background='transparent'; this.style.borderColor='var(--border-input)'">
+                📄
+              </button>
+
+              <button (click)="removeTask($index)" title="Delete Task" style="background: #ff4444; color: white; border: none; width: 34px; height: 100%; cursor: pointer; border-radius: 4px; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='#cc0000'" onmouseout="this.style.background='#ff4444'">
+                X
+              </button>
+            </div>
+          </div>
+
+          @if (expandedTasks.has(task)) {
+             <div style="padding: 15px; background: var(--bg-panel); border-top: 1px solid var(--border-main); display: flex; flex-direction: column; gap: 15px;">
+              
+              <div style="display: flex; gap: 15px; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 5px; background: var(--bg-input); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-input);">
+                  <label style="font-size: 12px; font-weight: bold; color: var(--text-muted);">Height:</label>
+                  <select #heightMode (change)="task.height = heightMode.value === 'full' ? 'full' : 1024" [value]="task.height === 'full' ? 'full' : 'custom'" style="padding: 6px; border: none; background: transparent; outline: none; font-weight: bold;">
+                    <option value="full">Full Page</option>
+                    <option value="custom">Custom (px)</option>
+                  </select>
+                  @if (task.height !== 'full') {
+                    <input type="number" [(ngModel)]="task.height" style="padding: 6px; width: 60px; border: 1px solid var(--border-input); background: var(--bg-card); border-radius: 4px;"/>
+                  }
+                </div>
+
+                <div style="display: flex; flex: 1; gap: 5px;">
+                  <input type="text" [ngModel]="task.clickSelectors ? task.clickSelectors.join(', ') : ''" (ngModelChange)="updateClickSelectors(task, $event)" placeholder="Click Selectors (e.g. .btn_nav, #close)" style="padding: 8px; flex: 1; border: 1px solid var(--border-input); background: var(--bg-input); border-radius: 4px;"/>
+                  
+                  <button class="record-btn"
+                          (click)="startRecording(task, $index)" 
+                          [disabled]="recordingIndex !== null || previewingIndex !== null"
+                          title="{{ recordingIndex === $index ? 'Recording in progress...' : 'Record Clicks' }}"
+                          [style.background]="recordingIndex === $index ? '#ff4444' : 'transparent'"
+                          [style.borderColor]="recordingIndex === $index ? '#ff4444' : 'var(--border-input)'"
+                          style="border: 1px solid; border-radius: 4px; padding: 0 15px; cursor: pointer; font-size: 14px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+                    {{ recordingIndex === $index ? '⬜' : '🔴' }}
+                  </button>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 15px; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 5px;">
+                  <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Wait Delay (ms):</label>
+                  <input [(ngModel)]="task.waitDelay" type="number" placeholder="Global" style="padding: 8px; width: 80px; border: 1px solid var(--border-input); background: var(--bg-input); border-radius: 4px;"/>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 5px; flex: 1;">
+                  <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">Scroll To Selector:</label>
+                  <input [(ngModel)]="task.scrollToSelector" type="text" placeholder="e.g. #footer" style="padding: 8px; flex: 1; border: 1px solid var(--border-input); background: var(--bg-input); border-radius: 4px;"/>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 5px; background: var(--bg-input); padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border-input);">
+                  <label style="font-size: 12px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; margin: 0;">
+                    <input [(ngModel)]="task.clearCache" type="checkbox" style="margin-right: 8px; width: 14px; height: 14px;"/>
+                    <span style="user-select: none; font-weight: bold;">Force Hard Reload</span>
+                  </label>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 5px;">
+                <label style="font-size: 12px; color: var(--text-muted); font-weight: bold;">CSS Injection:</label>
+                <textarea [(ngModel)]="task.itemCss" 
+                          placeholder=".hide-this-element { display: none !important; }"
+                          rows="2"
+                          style="width: 100%; padding: 8px; border: 1px solid var(--border-input); background: var(--bg-input); color: var(--text-main); border-radius: 4px; box-sizing: border-box; font-family: monospace; font-size: 12px; resize: vertical;"></textarea>
+              </div>
+
+            </div>
+          }
+        </div>
+      }
+
+      <button (click)="addTask()" style="padding: 15px 20px; background: var(--bg-panel); color: var(--text-main); border: 2px dashed var(--border-main); border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 16px; transition: background 0.2s;">
+        + Add Another URL
+      </button>
+    </section>
+  </main>
+</div>

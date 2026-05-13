@@ -1,0 +1,27 @@
+{
+  "name": "sswebsite",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "start:backend": "bun run screenshot-engine.ts",
+    "start:frontend": "cd screenshot-ui && ng serve -o",
+    "dev": "bun run launcher.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "concurrently": "^9.2.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@types/adm-zip": "^0.5.8",
+    "adm-zip": "^0.5.17",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "puppeteer": "^24.37.2",
+    "sharp": "^0.34.5"
+  }
+}
