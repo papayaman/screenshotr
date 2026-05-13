@@ -1,65 +1,55 @@
 # 📸 Headless Screenshot Automation Engine
 
-A robust, full-stack browser automation tool built with **Bun**, **Express**, **Puppeteer**, and **Angular**. This engine allows you to configure, execute, and record visual QA journeys, download compressed screenshot bundles, and manage task configurations locally or via GitHub.
+A robust, full-stack browser automation tool built with **Bun**, **Express**, **Puppeteer**, and **Angular**. This engine allows you to configure, execute, and record visual QA journeys, review results in a native gallery, and manage task configurations locally.
 
 ## ✨ Features
 
-* **Dual Interface:** Run tasks via the beautiful Angular web dashboard or directly from the terminal via the built-in CLI fallback.
+* **Dual Interface:** Run tasks via the streamlined Angular web dashboard or directly from the terminal via the built-in CLI fallback.
+* **In-Browser Gallery:** Review captured screenshots immediately within the dashboard after an automation run is complete.
 * **Journey Previewer:** Visually test your clicks, scrolls, and CSS injections in a live browser window before running bulk headless captures.
 * **Smart Rendering:** Supports full-page scrolling captures, custom viewports, cache clearing, and lazy-loading wait delays.
 * **DOM Manipulation:** Inject global or task-specific CSS, click multiple selectors, and scroll to specific elements dynamically prior to capture.
-* **Automated Zipping:** Automatically compiles rendered `.png` images into a clean `.zip` bundle using high-speed, in-memory buffering (`adm-zip`), avoiding local file clutter.
-* **Configuration Sync:** Save JSON task configurations locally or sync them directly with your team's remote GitHub repository.
-* **Workspace Isolation:** Automatically manages a clean `_screenshots` directory, wiping old files between runs to prevent ghosting.
+* **Automated Zipping:** Automatically compiles rendered .png images into a clean .zip bundle for easy distribution.
+* **Local Workspace Management:** Manage and delete project configurations directly from the UI sidebar with an integrated file management system.
 
 ---
 
 ## 🚀 Prerequisites
 
 Ensure you have the following installed on your local machine:
+
 * [Bun](https://bun.sh/) (v1.0+)
-* [Node.js](https://nodejs.org/) (Primarily for Angular CLI compatibility)
-* [Angular CLI](https://angular.io/cli)
+* [Node.js](https://nodejs.org/) (For Angular CLI and ecosystem compatibility)
 
 ---
 
 ## 🛠️ Installation
 
-1. **Clone the repository:**
-   ```bash
-   git clone <your-repo-url>
-   cd sswebsite-upgrade
-   ```
-
-2. **Install backend dependencies:**
-   ```bash
-   bun install
-   ```
-
-3. **Install frontend dependencies:**
-   ```bash
-   cd screenshot-ui
-   bun install
-   ```
+1. **Navigate to the root directory:**
+``` bash
+cd sswebsite-upgrade
+```
+2. **Install project dependencies:**
+``` bash
+bun install
+```
+3. **Install frontend-specific dependencies:**
+``` bash
+cd screenshot-ui
+bun install
+```
 
 ---
 
 ## ⚙️ Environment Configuration
 
-Create a `.env` file in the root directory with the following required variables:
+Create a .env file in the root directory. This file controls your local workspace paths:
 
-```env
-# The port for the Express backend
+``` env
 PORT=3000
-
-# The directory where JSON configuration files are stored/synced
-CONFIG_REPO_PATH=./configs
-
-# The global directory where screenshots and zip files will be generated
+CONFIGS_DIR=_screenshot-configs
 SCREENSHOTS_DIR=_screenshots
 ```
-
-*(Note: Ensure your Angular `src/environments/environment.ts` file has `apiUrl: 'http://localhost:3000'` pointing to this port).*
 
 ---
 

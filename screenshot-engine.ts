@@ -2,11 +2,15 @@
 import express from "express";
 import cors from "cors";
 import { runSingleTask, createZip, recordJourney, previewJourney } from "./index.ts"; 
-import { mkdir, writeFile, readdir, stat, readFile, rm } from "node:fs/promises"; // 🌟 Added rm
+import { mkdir, writeFile, readdir, stat, readFile, rm } from "node:fs/promises";
 import { join, isAbsolute } from "node:path";
 
+// 🌟 THE CLEAN CONSTANTS (Respecting your new .env naming)
+const PORT = Bun.env.PORT || 3000;
+const SCREENSHOTS_BASE = Bun.env.SCREENSHOTS_DIR || "_screenshots";
+const CONFIGS_BASE = Bun.env.CONFIGS_DIR || "_screenshot-configs";
+
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -15,9 +19,7 @@ app.use(express.json({ limit: '50mb' }));
 app.post("/api/run-task", async (req, res) => {
   try {
     const { task, outputDir, globalWaitDelay } = req.body;
-    
-    const baseDir = process.env.SCREENSHOTS_DIR || "_screenshots";
-    const fullOutputDir = join(process.cwd(), baseDir, outputDir);
+    const fullOutputDir = join(process.cwd(), SCREENSHOTS_BASE, outputDir);
     
     await mkdir(fullOutputDir, { recursive: true });
     
@@ -26,7 +28,7 @@ app.post("/api/run-task", async (req, res) => {
     
     res.status(200).json({ success: true, name: task.name });
   } catch (error) {
-    console.error(`❌ Error on ${req.body?.task?.name}:`, error);
+    console.error(`❌ Error on task:`, error);
     res.status(500).json({ error: "Task failed" });
   }
 });
@@ -35,11 +37,8 @@ app.post("/api/run-task", async (req, res) => {
 app.post("/api/clean-folder", async (req, res) => {
   try {
     const { outputDir } = req.body;
+    const fullOutputDir = join(process.cwd(), SCREENSHOTS_BASE, outputDir);
     
-    const baseDir = process.env.SCREENSHOTS_DIR || "_screenshots";
-    const fullOutputDir = join(process.cwd(), baseDir, outputDir);
-    
-    // 🌟 Safely delete the directory and everything inside it
     await rm(fullOutputDir, { recursive: true, force: true });
     
     console.log(`🧹 Cleaned slate for: ${fullOutputDir}`);
@@ -53,16 +52,12 @@ app.post("/api/clean-folder", async (req, res) => {
 // Endpoint 3: Zip the folder
 app.post("/api/zip-folder", async (req, res) => {
   try {
-    const { outputDir } = req.body; // e.g., "AUV_HCP"
-    
-    const baseDir = process.env.SCREENSHOTS_DIR || "_screenshots";
-    const fullOutputDir = join(process.cwd(), baseDir, outputDir);
+    const { outputDir } = req.body; 
+    const fullOutputDir = join(process.cwd(), SCREENSHOTS_BASE, outputDir);
     const zipFileName = `${outputDir}-screenshots.zip`;
     const fullZipPath = join(fullOutputDir, zipFileName);
 
     console.log(`📦 Zipping folder: ${fullOutputDir}`);
-    
-    // Pass BOTH the folder to zip, and exactly where to save it
     const zipName = await createZip(fullOutputDir, fullZipPath); 
     
     res.status(200).json({ success: true, zipName });
@@ -86,11 +81,9 @@ app.get("/api/stream-journey", async (req, res) => {
 
   try {
     const dummyTask = { url, width, height } as any;
-    
     await recordJourney(dummyTask, (newSelector) => {
       res.write(`data: ${JSON.stringify({ selector: newSelector })}\n\n`);
     });
-
     res.write(`event: done\ndata: {}\n\n`);
     res.end();
   } catch (error) {
@@ -103,22 +96,17 @@ app.get("/api/stream-journey", async (req, res) => {
 app.post("/api/save-config", async (req, res) => {
   try {
     const { filename, config } = req.body;
-    if (!filename || !config) {
-      return res.status(400).json({ error: "Filename and config required" });
-    }
+    if (!filename || !config) return res.status(400).json({ error: "Missing data" });
 
-    const repoPath = process.env.CONFIG_REPO_PATH || "./configs";
-    const configsDir = join(process.cwd(), repoPath);
-    
-    // Ensure the directory exists
+    const configsDir = join(process.cwd(), CONFIGS_BASE);
     await mkdir(configsDir, { recursive: true });
     
-    const filePath = join(configsDir, filename);
+    const filePath = join(configsDir, filename.endsWith('.json') ? filename : `${filename}.json`);
 
     await writeFile(filePath, JSON.stringify(config, null, 2), "utf-8");
-    console.log(`💾 Saved configuration: ${repoPath}/${filename}`);
+    console.log(`💾 Saved configuration: ${CONFIGS_BASE}/${filename}`);
     
-    res.status(200).json({ success: true, message: "Saved locally" });
+    res.status(200).json({ success: true });
   } catch (error) {
     console.error("Save failed:", error);
     res.status(500).json({ error: "Failed to save file" });
@@ -129,42 +117,24 @@ app.post("/api/save-config", async (req, res) => {
 app.get("/api/download", (req, res) => {
   try {
     const filename = req.query.file as string;
-    
-    if (!filename) {
-      return res.status(400).send("No file specified.");
-    }
+    if (!filename) return res.status(400).send("No file specified.");
 
-    // SMART PATH RESOLUTION: Look in the root folder or use absolute path
-    const filePath = isAbsolute(filename) 
-      ? filename 
-      : join(process.cwd(), filename);
-
-    console.log(`📥 Client requested download. Looking for: ${filePath}`);
-
-    res.download(filePath, (err) => {
-      if (err) {
-        console.error(`❌ Download failed. The file is not at: ${filePath}`);
-        if (!res.headersSent) res.status(404).send("File not found on server.");
-      } else {
-        console.log(`✅ Download complete: ${filename}`);
-      }
-    });
+    const filePath = isAbsolute(filename) ? filename : join(process.cwd(), filename);
+    res.download(filePath);
   } catch (error) {
     res.status(500).json({ error: "Download error" });
   }
 });
 
-// Endpoint 7: Get Recent Files (Local Only)
+// Endpoint 7: Get Recent Files
 app.get("/api/recent-files", async (req, res) => {
   try {
-    const repoPath = process.env.CONFIG_REPO_PATH || "./configs";
-    const configsDir = join(process.cwd(), repoPath);
+    const configsDir = join(process.cwd(), CONFIGS_BASE);
+    await mkdir(configsDir, { recursive: true }); // Ensure dir exists so readdir doesn't crash
 
-    // --- GET LOCAL RECENTS ---
     const files = await readdir(configsDir);
     const jsonFiles = files.filter(f => f.endsWith('.json'));
     
-    // Get stats to sort by modified time
     const filesWithStats = await Promise.all(jsonFiles.map(async f => {
       const fileStat = await stat(join(configsDir, f));
       return { name: f, time: fileStat.mtimeMs };
@@ -172,27 +142,24 @@ app.get("/api/recent-files", async (req, res) => {
     
     const localRecents = filesWithStats
       .sort((a, b) => b.time - a.time)
-      .slice(0, 5)
+      .slice(0, 10) // Show up to 10
       .map(f => f.name);
 
-    // Return empty array for remote to satisfy any existing UI interfaces safely
-    res.status(200).json({ local: localRecents, remote: [] });
+    res.status(200).json({ local: localRecents });
   } catch (error) {
     console.error("Failed to fetch recents:", error);
     res.status(500).json({ error: "Failed to fetch recents" });
   }
 });
 
-// Endpoint 8: Load a Specific Config File
+// Endpoint 8: Load Config
 app.get("/api/load-config/:filename", async (req, res) => {
   try {
-    const repoPath = process.env.CONFIG_REPO_PATH || "./configs";
-    const filePath = join(process.cwd(), repoPath, req.params.filename);
-    
+    const filePath = join(process.cwd(), CONFIGS_BASE, req.params.filename);
     const fileData = await readFile(filePath, "utf-8");
     res.status(200).json(JSON.parse(fileData));
   } catch (error) {
-    res.status(404).json({ error: "File not found locally." }); 
+    res.status(404).json({ error: "File not found." }); 
   }
 });
 
@@ -200,42 +167,24 @@ app.get("/api/load-config/:filename", async (req, res) => {
 app.post("/api/preview-journey", async (req, res) => {
   try {
     const { task } = req.body;
-    
-    if (!task) {
-      return res.status(400).json({ error: "No task provided" });
-    }
-
-    console.log(`👁️ Client requested preview for: ${task.name}`);
-    
-    // Call the function we built in index.ts
+    console.log(`👁️ Launching preview for: ${task.name}`);
     await previewJourney(task);
-    
-    // Once the Puppeteer window closes, tell the UI it finished successfully
     res.status(200).json({ success: true });
-    
   } catch (error) {
-    console.error("Preview error:", error);
-    res.status(500).json({ error: "Preview failed to launch" });
+    res.status(500).json({ error: "Preview failed" });
   }
 });
 
-// Endpoint 10: Delete a Config File
+// Endpoint 10: Delete Config
 app.post("/api/delete-config", async (req, res) => {
   try {
     const { filename } = req.body;
-    if (!filename) return res.status(400).json({ error: "Filename required" });
-
-    const repoPath = process.env.CONFIG_REPO_PATH || "./configs";
-    const filePath = join(process.cwd(), repoPath, filename);
-
-    // Use the 'rm' we imported at the top
+    const filePath = join(process.cwd(), CONFIGS_BASE, filename);
     await rm(filePath, { force: true });
-    
     console.log(`🗑️ Deleted config: ${filename}`);
     res.status(200).json({ success: true });
   } catch (error) {
-    console.error("Delete failed:", error);
-    res.status(500).json({ error: "Failed to delete file" });
+    res.status(500).json({ error: "Delete failed" });
   }
 });
 
