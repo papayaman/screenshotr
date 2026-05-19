@@ -27,7 +27,7 @@ Ensure you have the following installed on your local machine:
 
 1. **Navigate to the root directory:**
 ``` bash
-cd sswebsite-upgrade
+cd screenshotr
 ```
 2. **Install project dependencies:**
 ``` bash
