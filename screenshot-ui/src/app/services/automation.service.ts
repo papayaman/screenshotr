@@ -1,4 +1,4 @@
-// src/app/services/automation.service.ts
+// screenshots-ui/src/app/services/automation.service.ts
 import { Injectable, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -70,4 +70,9 @@ export class AutomationService {
   deleteConfig(filename: string) {
     return this.http.post(`${this.apiUrl}/api/delete-config`, { filename });
   }
+
+  getGalleryImages(folder: string): Observable<{ images: string[] }> {
+    return this.http.get<{ images: string[] }>(`${this.apiUrl}/api/gallery/${folder}`);
+  }
+
 }

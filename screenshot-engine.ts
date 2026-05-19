@@ -15,6 +15,8 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+app.use("/screenshots", express.static(join(process.cwd(), SCREENSHOTS_BASE)));
+
 // Endpoint 1: Run a single screenshot
 app.post("/api/run-task", async (req, res) => {
   try {
@@ -185,6 +187,22 @@ app.post("/api/delete-config", async (req, res) => {
     res.status(200).json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Delete failed" });
+  }
+});
+
+// Endpoint 11: Get Image List for Gallery
+app.get("/api/gallery/:folder", async (req, res) => {
+  try {
+    const { folder } = req.params;
+    const folderPath = join(process.cwd(), SCREENSHOTS_BASE, folder);
+    
+    const files = await readdir(folderPath);
+    // Only grab PNGs
+    const images = files.filter(f => f.toLowerCase().endsWith('.png'));
+    
+    res.status(200).json({ images });
+  } catch (error) {
+    res.status(404).json({ images: [], error: "Folder not found" });
   }
 });
 

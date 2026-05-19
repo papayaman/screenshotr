@@ -1,4 +1,4 @@
-// app.component.ts
+// screenshots-ui/src/app/app.component.ts
 import { Component, inject, ViewEncapsulation, OnInit } from '@angular/core'; 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -17,6 +17,7 @@ export interface ScreenshotTask {
   clearCache?: boolean;
   globalCss?: string;
   itemCss?: string;
+  thumbnail?: string;
 }
 
 @Component({
@@ -84,6 +85,16 @@ export interface ScreenshotTask {
       background: var(--bg-highlight) !important;
       border-color: var(--text-accent) !important;
     }
+
+    .thumb-container:hover .thumb-tooltip {
+      opacity: 1 !important;
+      transform: translateY(-50%) translateX(10px) !important;
+      pointer-events: auto !important;
+    }
+
+    div[draggable="true"] {
+      overflow: visible !important;
+    }
   `]
 })
 export class AppComponent implements OnInit {
@@ -106,6 +117,8 @@ export class AppComponent implements OnInit {
   recentLocalFiles: string[] = [];
   isLoadingRecents = false;
   fileToDelete: string | null = null;
+  galleryImages: string[] = [];
+  isGalleryLoading = false;
 
   ngOnInit() {
     // 🌟 FIX: Safety check for Angular SSR. 
@@ -422,6 +435,7 @@ export class AppComponent implements OnInit {
     this.completedTasks = 0;
     this.statusMessage = '';
     this.downloadUrl = null;
+    this.config.tasks.forEach(t => t.thumbnail = undefined);
 
     // 🌟 NEW: Calculate the specific folder for this file
     const dynamicOutputDir = this.getDynamicOutputDir();
@@ -452,6 +466,7 @@ export class AppComponent implements OnInit {
         await firstValueFrom(
           this.automationService.runSingleTask(payloadTask, dynamicOutputDir, this.config.globalWaitDelay)
         );
+        task.thumbnail = `http://localhost:3000/screenshots/${dynamicOutputDir}/${payloadTask.name}.png?t=${Date.now()}`;
         this.completedTasks++;
       } catch (error) {
         console.error(`Task ${task.name} failed:`, error);
@@ -473,6 +488,26 @@ export class AppComponent implements OnInit {
         
         // 🌟 UPDATED: Pass the exact file as a URL query parameter
         this.downloadUrl = `http://localhost:3000/api/download?file=${encodeURIComponent(actualZipName)}`;
+
+        // --- GALLERY LOGIC START ---
+        this.isGalleryLoading = true;
+        this.galleryImages = []; // Clear old images
+        
+        // Use the folder name we just processed
+        const folder = dynamicOutputDir; 
+
+        this.automationService.getGalleryImages(folder).subscribe({
+          next: (res) => {
+            // Map the filenames to full URLs the browser can reach
+            this.galleryImages = res.images.map(img => `http://localhost:3000/screenshots/${folder}/${img}`);
+            this.isGalleryLoading = false;
+          },
+          error: (err) => {
+            console.error("Gallery load failed:", err);
+            this.isGalleryLoading = false;
+          }
+        });
+        // --- GALLERY LOGIC END ---
         
       } catch (e) {
         this.executionStatus = '✅ Automation Complete! (Warning: Zip failed)';
@@ -509,6 +544,13 @@ export class AppComponent implements OnInit {
   cancelDelete(event: Event) {
     event.stopPropagation();
     this.fileToDelete = null;
+  }
+
+  // Helper to open the full screenshot in a new tab
+  openThumbnail(url: string | undefined) {
+    if (url && typeof window !== 'undefined') {
+      window.open(url, '_blank');
+    }
   }
 
   // =========================================================================
