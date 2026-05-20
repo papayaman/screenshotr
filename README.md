@@ -16,10 +16,21 @@ A robust, full-stack browser automation tool built with **Bun**, **Express**, **
 
 ## 🚀 Prerequisites
 
-Ensure you have the following installed on your local machine:
+Ensure you have the following installed on your local machine. If you are developing on **Apple Silicon (M1/M2/M3/M4 macOS)**, the native image compilation engine (`sharp`) requires access to local build environments.
 
+### 📋 Core Software
 * [Bun](https://bun.sh/) (v1.0+)
 * [Node.js](https://nodejs.org/) (For Angular CLI and ecosystem compatibility)
+
+### 🛠️ macOS Native Build Tools
+Before installing dependencies, run the following commands in your terminal to ensure your environment can compile native C++ modules:
+
+```bash
+# 1. Install Apple Command Line Tools (provides the native C++ compiler)
+xcode-select --install
+
+# 2. Install node-gyp globally so Bun can execute background build scripts
+bun add -g node-gyp
 
 ---
 
