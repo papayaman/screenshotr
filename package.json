@@ -21,6 +21,7 @@
     "adm-zip": "^0.5.17",
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "node-addon-api": "^8.7.0",
     "puppeteer": "^24.37.2",
     "sharp": "^0.34.5"
   }
