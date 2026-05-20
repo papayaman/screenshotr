@@ -25,13 +25,17 @@ Ensure you have the following installed on your local machine. If you are develo
 ### 🛠️ macOS Native Build Tools
 Before installing dependencies, run the following commands in your terminal to ensure your environment can compile native C++ modules:
 
-# 1. Install Apple Command Line Tools (provides the native C++ compiler)
+1. **Install Apple Command Line Tools** (provides the native C++ compiler)
 ```bash
 xcode-select --install
 ```
-# 2. Install node-gyp globally so Bun can execute background build scripts
+2. **Install node-gyp globally** so Bun can execute background build scripts
 ```bash
 bun add -g node-gyp
+```
+3. **Install angular-cli globally**.
+```bash
+bun install -g @angular/cli
 ```
 ---
 
@@ -51,11 +55,11 @@ cd screenshot-ui
 bun install
 ```
 4. **Initialize the Angular environment files:**
-The background automation dynamic launcher expects the Angular environment architecture to exist so it can seamlessly inject active local backend ports. Run the following to provision the placeholder files:
+The background automation dynamic launcher expects the Angular environment architecture to exist so it can seamlessly inject active local backend ports. Run the following to provision the placeholder files while on the screenshot-ui folder:
 ```bash
-mkdir -p screenshot-ui/src/environments
-touch screenshot-ui/src/environments/environment.ts
-touch screenshot-ui/src/environments/environment.development.ts
+mkdir -p src/environments
+touch src/environments/environment.ts
+touch src/environments/environment.development.ts
 ```
 
 ---
